@@ -17,7 +17,7 @@ class DifferTest {
         val second = """{
          "id": 1
         }""".trimIndent()
-        Assert.assertEquals(emptyList<DiffResult>(), compare(first, second))
+        Assert.assertEquals(emptyList<DiffResult.ValueDifference>(), compare(first, second))
     }
 
     @Test
@@ -29,7 +29,7 @@ class DifferTest {
         val second = """{
          "id": 2
         }""".trimIndent()
-        Assert.assertEquals(DiffResult(
+        Assert.assertEquals(DiffResult.ValueDifference(
                 key = "id",
                 firstValue = 1.0,
                 secondValue = 2.0,
@@ -46,7 +46,7 @@ class DifferTest {
 
         val second = """{
         }""".trimIndent()
-        Assert.assertEquals(DiffResult(
+        Assert.assertEquals(DiffResult.ValueDifference(
                 key = "id",
                 firstValue = 1.0,
                 secondValue = null,
@@ -68,7 +68,7 @@ class DifferTest {
             "key": "2"
          }
         }""".trimIndent()
-        Assert.assertEquals(DiffResult(
+        Assert.assertEquals(DiffResult.ValueDifference(
                 key = "key",
                 firstValue = "1",
                 secondValue = "2",
@@ -91,7 +91,7 @@ class DifferTest {
          "id": 2
          }
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult(
+        Assert.assertEquals(DiffResult.ValueDifference(
                 key = "id",
                 firstValue = 1.0,
                 secondValue = 2.0,
@@ -100,6 +100,25 @@ class DifferTest {
         ), compare(first, second).first())
     }
 
+    @Test
+    fun shouldDetectTypesMismatch() {
+        val first = """{ "items":
+        {
+         "id": 1
+         }
+        }""".trimIndent()
+
+        val second = """{ "items":[
+        {
+         "id": 2
+         }
+        ]}""".trimIndent()
+        Assert.assertEquals(DiffResult.TypesMismatch(
+                key = "items",
+                firstObject = mapOf("items" to mapOf("id" to 1.0)),
+                secondObject = mapOf("items" to listOf(mapOf("id" to 2.0)))
+        ), compare(first, second).first())
+    }
 
     fun compare(first: String, second: String): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -118,6 +137,9 @@ class DifferTest {
 
     private fun dispatchByType(key: String, acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
         return when {
+            firstJson[key] != null && secondJson[key] != null && firstJson[key]!!.javaClass != secondJson[key]!!.javaClass -> {
+                acc + DiffResult.TypesMismatch(key, firstJson, secondJson)
+            }
             secondJson[key] is Map<*, *> && firstJson[key] is Map<*, *> ->
                 computeObjectDiff(acc, firstJson[key] as Map<String, Any>, secondJson[key] as Map<String, Any>)
             secondJson[key] is List<*> && firstJson[key] is List<*> ->
@@ -134,7 +156,7 @@ class DifferTest {
 
     private fun computeValueDifference(key: String, acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
         return if (secondJson[key] != firstJson[key]) {
-            acc + DiffResult(key = key,
+            acc + DiffResult.ValueDifference(key = key,
                     firstValue = firstJson[key],
                     secondValue = secondJson[key],
                     firstObject = firstJson,
@@ -142,11 +164,20 @@ class DifferTest {
         } else acc
     }
 
-    data class DiffResult(
-            val key: String,
-            val firstValue: Any?,
-            val secondValue: Any?,
-            val firstObject: Map<String, Any?>,
-            val secondObject: Map<String, Any?>
-    )
+    sealed class DiffResult {
+        data class ValueDifference(
+                val key: String,
+                val firstValue: Any?,
+                val secondValue: Any?,
+                val firstObject: Map<String, Any?>,
+                val secondObject: Map<String, Any?>
+        ) : DiffResult()
+
+        data class TypesMismatch(
+                val key: String,
+                val firstObject: Map<String, Any?>,
+                val secondObject: Map<String, Any?>
+        ) : DiffResult()
+    }
+
 }
