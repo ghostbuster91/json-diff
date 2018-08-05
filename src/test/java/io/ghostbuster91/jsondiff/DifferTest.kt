@@ -30,7 +30,7 @@ class DifferTest {
          "id": 2
         }""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "id",
+                key = ".id",
                 firstValue = 1.0,
                 secondValue = 2.0,
                 firstObject = mapOf("id" to 1.0),
@@ -47,7 +47,7 @@ class DifferTest {
         val second = """{
         }""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "id",
+                key = ".id",
                 firstValue = 1.0,
                 secondValue = null,
                 firstObject = mapOf("id" to 1.0),
@@ -64,7 +64,7 @@ class DifferTest {
          "id": 1
         }""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "id",
+                key = ".id",
                 firstValue = null,
                 secondValue = 1.0,
                 firstObject = mapOf(),
@@ -86,7 +86,7 @@ class DifferTest {
          }
         }""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "key",
+                key = ".id.key",
                 firstValue = "1",
                 secondValue = "2",
                 firstObject = mapOf("key" to "1"),
@@ -109,7 +109,7 @@ class DifferTest {
          }
         ]}""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "id",
+                key = ".items[].id",
                 firstValue = 1.0,
                 secondValue = 2.0,
                 firstObject = mapOf("id" to 1.0),
@@ -131,7 +131,7 @@ class DifferTest {
          }
         ]}""".trimIndent()
         Assert.assertEquals(DiffResult.TypesMismatch(
-                key = "items",
+                key = ".items",
                 firstObject = mapOf("items" to mapOf("id" to 1.0)),
                 secondObject = mapOf("items" to listOf(mapOf("id" to 2.0)))
         ), compare(first, second).first())
@@ -147,7 +147,7 @@ class DifferTest {
          1,2,4
         ]}""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "items",
+                key = ".items[]",
                 firstValue = 3.0,
                 secondValue = 4.0,
                 firstObject = mapOf("items" to listOf(1.0, 2.0, 3.0)),
@@ -165,7 +165,7 @@ class DifferTest {
          1,2
         ]}""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "items",
+                key = ".items[]",
                 firstValue = 3.0,
                 secondValue = null,
                 firstObject = mapOf("items" to listOf(1.0, 2.0, 3.0)),
@@ -183,7 +183,7 @@ class DifferTest {
          1,2,3
         ]}""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "items",
+                key = ".items[]",
                 firstValue = null,
                 secondValue = 3.0,
                 firstObject = mapOf("items" to listOf(1.0, 2.0)),
@@ -201,7 +201,7 @@ class DifferTest {
          [1,2,3]
         ]}""".trimIndent()
         Assert.assertEquals(DiffResult.ValueDifference(
-                key = "items",
+                key = ".items[].[]",
                 firstValue = null,
                 secondValue = 3.0,
                 firstObject = mapOf("items" to listOf(listOf(1.0, 2.0))),
@@ -233,13 +233,13 @@ class DifferTest {
          }]
         }""".trimIndent()
         Assert.assertEquals(setOf(DiffResult.ValueDifference(
-                key = "id",
+                key = ".items[].id",
                 firstValue = 2.0,
                 secondValue = 1.0,
                 firstObject = mapOf("id" to 2.0, "labels" to listOf("2l1")),
                 secondObject = mapOf("id" to 1.0, "labels" to listOf("2l1"))
         ), DiffResult.ValueDifference(
-                key = "labels",
+                key = ".items[].labels[]",
                 firstValue = "3l2",
                 secondValue = "3l3",
                 firstObject = mapOf("id" to 3.0, "labels" to listOf("3l1", "3l2")),
@@ -278,39 +278,43 @@ class DifferTest {
         val adapter = moshi.adapter<Map<String, Any>>(type)
         val firstJson = adapter.fromJson(first)!!
         val secondJson = adapter.fromJson(second)!!
-        return computeObjectDiff(emptyList(), firstJson, secondJson, combinedListCreator)
+        return computeObjectDiff(emptyList(), firstJson, secondJson, combinedListCreator, "")
     }
 
-    private fun computeObjectDiff(acc: List<DiffResult>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
+    private fun computeObjectDiff(acc: List<DiffResult>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>, parentKey: String): List<DiffResult> {
         return (firstJson.keys + secondJson.keys).distinct().fold(acc) { acc, key ->
-            dispatchByType(key, acc, firstJson, secondJson, combinedListCreator)
+            dispatchByType("$parentKey.$key", acc, firstJson, secondJson, combinedListCreator)
         }
     }
 
-    private fun dispatchByType(key: String, acc: List<DiffResult>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
+    private fun dispatchByType(jsonPath: String, acc: List<DiffResult>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
+        val key = jsonPath.substringAfterLast(".")
         return when {
-            firstJson[key] != null && secondJson[key] != null && firstJson[key]!!.javaClass != secondJson[key]!!.javaClass -> {
-                acc + DiffResult.TypesMismatch(key, firstJson, secondJson)
+            typesNotNullButDifferent(firstJson[key], secondJson[key]) -> {
+                acc + DiffResult.TypesMismatch(jsonPath, firstJson, secondJson)
             }
             secondJson[key] is Map<*, *> && firstJson[key] is Map<*, *> ->
-                computeObjectDiff(acc, firstJson[key]!!.asMap(), secondJson[key]!!.asMap(), combinedListCreator)
+                computeObjectDiff(acc, firstJson[key]!!.asMap(), secondJson[key]!!.asMap(), combinedListCreator, jsonPath)
             secondJson[key] is List<*> && firstJson[key] is List<*> ->
-                computeListDiff(acc, key, firstJson[key]!!.asList(), secondJson[key]!!.asList(), firstJson, secondJson, combinedListCreator)
-            else -> computeValueDifference(key, acc, firstJson[key], secondJson[key], firstJson, secondJson)
+                computeListDiff(acc, "$jsonPath[]", firstJson[key]!!.asList(), secondJson[key]!!.asList(), firstJson, secondJson, combinedListCreator)
+            else -> computeValueDifference(jsonPath, acc, firstJson[key], secondJson[key], firstJson, secondJson)
         }
     }
 
-    private fun computeListDiff(acc: List<DiffResult>, key: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
+    private fun typesNotNullButDifferent(firstObject: Any?, secondObject: Any?) =
+            secondObject != null && firstObject != null && secondObject.javaClass != firstObject.javaClass
+
+    private fun computeListDiff(acc: List<DiffResult>, jsonPath: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
         return combinedListCreator(firstList, secondList)
                 .fold(acc) { acc, (first, second) ->
                     when {
-                        first != null && second != null && first.javaClass != second.javaClass -> {
-                            acc + DiffResult.TypesMismatch(key, firstJson, secondJson)
+                        typesNotNullButDifferent(first, second) -> {
+                            acc + DiffResult.TypesMismatch(jsonPath, firstJson, secondJson)
                         }
-                        first is Map<*, *> && second is Map<*, *> -> computeObjectDiff(acc, first.asMap(), second.asMap(), combinedListCreator)
+                        first is Map<*, *> && second is Map<*, *> -> computeObjectDiff(acc, first.asMap(), second.asMap(), combinedListCreator, jsonPath)
                         first is List<*> && second is List<*> ->
-                            computeListDiff(acc, key, first.asList(), second.asList(), firstJson, secondJson, combinedListCreator)
-                        else -> computeValueDifference(key, acc, first, second, firstJson, secondJson)
+                            computeListDiff(acc, "$jsonPath.[]", first.asList(), second.asList(), firstJson, secondJson, combinedListCreator)
+                        else -> computeValueDifference(jsonPath, acc, first, second, firstJson, secondJson)
                     }
                 }
     }
