@@ -327,10 +327,10 @@ class DifferTest {
         }
     }
 
-    private fun computeListDiff(jsonPath: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: Map<String, ListCombiner>): List<DiffResult> {
-        return combinedListCreator.getValue(jsonPath)(firstList, secondList)
+    private fun computeListDiff(jsonPath: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, listCombinerMapping: Map<String, ListCombiner>): List<DiffResult> {
+        return listCombinerMapping.getValue(jsonPath)(firstList, secondList)
                 .fold(emptyList()) { acc, (firstItem, secondItem) ->
-                    acc + dispatchByType(jsonPath, firstItem, secondItem, firstJson, secondJson, combinedListCreator)
+                    acc + dispatchByType(jsonPath, firstItem, secondItem, firstJson, secondJson, listCombinerMapping)
                 }
     }
 
