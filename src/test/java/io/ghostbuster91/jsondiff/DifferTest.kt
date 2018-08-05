@@ -248,51 +248,77 @@ class DifferTest {
         ), compare(first, second).toSet())
     }
 
+    @Test
+    fun shouldMatchItemsWithinListByProperty() {
+        val firstJson = """{ "items":
+        [{
+         "id": 2
+         },
+         {
+         "id": 3
+         }]
+        }""".trimIndent()
 
-    fun compare(first: String, second: String): List<DiffResult> {
+        val secondJson = """{ "items":
+        [{
+         "id": 3
+         },
+         {
+         "id": 2
+         }]
+        }""".trimIndent()
+        Assert.assertEquals(emptyList<DiffResult>(), compare(firstJson, secondJson) { firstList, secondList ->
+            firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get("id") == second?.asMap()?.get("id") } }
+        })
+    }
+
+    fun compare(first: String, second: String, combinedListCreator: CombinedListCreator = ::combineListsByOrder): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
         val adapter = moshi.adapter<Map<String, Any>>(type)
         val firstJson = adapter.fromJson(first)!!
         val secondJson = adapter.fromJson(second)!!
-        return computeObjectDiff(emptyList(), firstJson, secondJson)
+        return computeObjectDiff(emptyList(), firstJson, secondJson, combinedListCreator)
     }
 
-    private fun computeObjectDiff(acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
+    private fun computeObjectDiff(acc: List<DiffResult>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
         return (firstJson.keys + secondJson.keys).distinct().fold(acc) { acc, key ->
-            dispatchByType(key, acc, firstJson, secondJson)
+            dispatchByType(key, acc, firstJson, secondJson, combinedListCreator)
         }
     }
 
-    private fun dispatchByType(key: String, acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
+    private fun dispatchByType(key: String, acc: List<DiffResult>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
         return when {
             firstJson[key] != null && secondJson[key] != null && firstJson[key]!!.javaClass != secondJson[key]!!.javaClass -> {
                 acc + DiffResult.TypesMismatch(key, firstJson, secondJson)
             }
             secondJson[key] is Map<*, *> && firstJson[key] is Map<*, *> ->
-                computeObjectDiff(acc, firstJson[key] as Map<String, Any>, secondJson[key] as Map<String, Any>)
+                computeObjectDiff(acc, firstJson[key]!!.asMap(), secondJson[key]!!.asMap(), combinedListCreator)
             secondJson[key] is List<*> && firstJson[key] is List<*> ->
-                computeListDiff(acc, key, firstJson[key] as List<Any>, secondJson[key] as List<Any>, firstJson, secondJson)
+                computeListDiff(acc, key, firstJson[key]!!.asList(), secondJson[key]!!.asList(), firstJson, secondJson, combinedListCreator)
             else -> computeValueDifference(key, acc, firstJson[key], secondJson[key], firstJson, secondJson)
         }
     }
 
-    private fun computeListDiff(acc: List<DiffResult>, key: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
-        return (0..Math.max(firstList.size, secondList.size)).map { firstList.getOrNull(it) to secondList.getOrNull(it) }
+    private fun computeListDiff(acc: List<DiffResult>, key: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
+        return combinedListCreator(firstList, secondList)
                 .fold(acc) { acc, (first, second) ->
                     when {
                         first != null && second != null && first.javaClass != second.javaClass -> {
                             acc + DiffResult.TypesMismatch(key, firstJson, secondJson)
                         }
-                        first is Map<*, *> && second is Map<*, *> -> computeObjectDiff(acc, first as Map<String, Any>, second as Map<String, Any>)
+                        first is Map<*, *> && second is Map<*, *> -> computeObjectDiff(acc, first.asMap(), second.asMap(), combinedListCreator)
                         first is List<*> && second is List<*> ->
-                            computeListDiff(acc, key, first as List<Any>, second as List<Any>, firstJson, secondJson)
+                            computeListDiff(acc, key, first.asList(), second.asList(), firstJson, secondJson, combinedListCreator)
                         else -> computeValueDifference(key, acc, first, second, firstJson, secondJson)
                     }
                 }
     }
 
-    private fun computeValueDifference(key: String, acc: List<DiffResult>, firstValue: Any?, secondValue: Any?, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
+    private fun combineListsByOrder(firstList: List<Any?>, secondList: List<Any?>) =
+            (0..Math.max(firstList.size, secondList.size)).map { firstList.getOrNull(it) to secondList.getOrNull(it) }
+
+    private fun computeValueDifference(key: String, acc: List<DiffResult>, firstValue: Any?, secondValue: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>): List<DiffResult> {
         return if (secondValue != firstValue) {
             acc + DiffResult.ValueDifference(key = key,
                     firstValue = firstValue,
@@ -319,3 +345,9 @@ class DifferTest {
     }
 
 }
+
+typealias CombinedListCreator = (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>
+
+private fun Any.asMap() = this as Map<String, Any?>
+
+private fun Any.asList() = this as List<Any?>
