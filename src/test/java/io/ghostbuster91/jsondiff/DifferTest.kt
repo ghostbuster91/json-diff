@@ -131,10 +131,30 @@ class DifferTest {
          "id": 2
          }
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult.TypesMismatch(
+        Assert.assertEquals(DiffResult.ValueDifference(
                 key = ".items",
+                firstValue = "object",
+                secondValue = "list",
                 firstObject = mapOf("items" to mapOf("id" to 1.0)),
                 secondObject = mapOf("items" to listOf(mapOf("id" to 2.0)))
+        ), compare(first, second).first())
+    }
+
+    @Test
+    fun shouldDetectTypesMismatch2() {
+        val first = """{ "items":
+        {
+         "id": 1
+         }
+        }""".trimIndent()
+
+        val second = """{ "items": 1 }""".trimIndent()
+        Assert.assertEquals(DiffResult.ValueDifference(
+                key = ".items",
+                firstValue = "object",
+                secondValue = "primitive",
+                firstObject = mapOf("items" to mapOf("id" to 1.0)),
+                secondObject = mapOf("items" to 1.0)
         ), compare(first, second).first())
     }
 
@@ -368,10 +388,24 @@ class DifferTest {
 
     private fun dispatchByType(jsonPath: String, firstItem: Any?, secondItem: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, listCombinerMapping: Map<String, ListCombiner>): List<DiffResult> {
         return when {
-            typesNotNullButDifferent(firstItem, secondItem) -> listOf(DiffResult.TypesMismatch(jsonPath, firstJson, secondJson))
+            typesNotNullButDifferent(firstItem, secondItem) -> computeTypesDifference(jsonPath, firstJson, secondJson, firstItem, secondItem)
             bothAreMaps(firstItem, secondItem) -> computeObjectDiff(firstItem!!.asMap(), secondItem!!.asMap(), listCombinerMapping, jsonPath)
             bothAreLists(firstItem, secondItem) -> computeListDiff("$jsonPath[]", firstItem!!.asList(), secondItem!!.asList(), firstJson, secondJson, listCombinerMapping)
             else -> computeValueDifference(jsonPath, firstItem, secondItem, firstJson, secondJson)
+        }
+    }
+
+    private fun computeTypesDifference(jsonPath: String, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, firstItem: Any?, secondItem: Any?): List<DiffResult> =
+            listOf(DiffResult.ValueDifference(jsonPath, firstValue = determineType(firstItem), secondValue = determineType(secondItem), firstObject = firstJson, secondObject = secondJson))
+
+    private fun determineType(secondItem: Any?): String {
+        if (secondItem == null) {
+            return "null"
+        }
+        return when (secondItem) {
+            is Map<*, *> -> "object"
+            is List<*> -> "list"
+            else -> "primitive"
         }
     }
 
@@ -401,12 +435,6 @@ class DifferTest {
                 val key: String,
                 val firstValue: Any?,
                 val secondValue: Any?,
-                val firstObject: Map<String, Any?>,
-                val secondObject: Map<String, Any?>
-        ) : DiffResult()
-
-        data class TypesMismatch(
-                val key: String,
                 val firstObject: Map<String, Any?>,
                 val secondObject: Map<String, Any?>
         ) : DiffResult()
