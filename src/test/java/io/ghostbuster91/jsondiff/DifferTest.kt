@@ -191,6 +191,23 @@ class DifferTest {
         ), compare(first, second).first())
     }
 
+    @Test
+    fun shouldDetectNestedListDifferences() {
+        val first = """{ "items":[
+         [1,2]
+        ]}""".trimIndent()
+
+        val second = """{ "items":[
+         [1,2,3]
+        ]}""".trimIndent()
+        Assert.assertEquals(DiffResult.ValueDifference(
+                key = "items",
+                firstValue = null,
+                secondValue = 3.0,
+                firstObject = mapOf("items" to listOf(listOf(1.0, 2.0))),
+                secondObject = mapOf("items" to listOf(listOf(1.0, 2.0, 3.0)))
+        ), compare(first, second).first())
+    }
 
     fun compare(first: String, second: String): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -228,6 +245,8 @@ class DifferTest {
                             acc + DiffResult.TypesMismatch(key, firstJson, secondJson)
                         }
                         first is Map<*, *> && second is Map<*, *> -> computeObjectDiff(acc, first as Map<String, Any>, second as Map<String, Any>)
+                        first is List<*> && second is List<*> ->
+                            computeListDiff(acc, key, first as List<Any>, second as List<Any>, firstJson, secondJson)
                         else -> computeValueDifference(key, acc, first, second, firstJson, secondJson)
                     }
                 }
