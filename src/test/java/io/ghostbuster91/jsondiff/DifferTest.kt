@@ -77,6 +77,30 @@ class DifferTest {
         ), compare(first, second).first())
     }
 
+
+    @Test
+    fun shouldDetectDifferenceInListOfObjects() {
+        val first = """{ "items":[
+        {
+         "id": 1
+         }
+        ]}""".trimIndent()
+
+        val second = """{ "items":[
+        {
+         "id": 2
+         }
+        ]}""".trimIndent()
+        Assert.assertEquals(DiffResult(
+                key = "id",
+                firstValue = 1.0,
+                secondValue = 2.0,
+                firstObject = mapOf("id" to 1.0),
+                secondObject = mapOf("id" to 2.0)
+        ), compare(first, second).first())
+    }
+
+
     fun compare(first: String, second: String): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
@@ -88,13 +112,23 @@ class DifferTest {
 
     private fun computeObjectDiff(acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
         return firstJson.keys.fold(acc) { acc, key ->
-            when {
-                secondJson[key] is Map<*, *> && firstJson[key] is Map<*, *> -> computeObjectDiff(
-                        acc,
-                        firstJson[key] as Map<String, Any>,
-                        secondJson[key] as Map<String, Any>)
-                else -> computeValueDifference(key, acc, firstJson, secondJson)
-            }
+            dispatchByType(key, acc, firstJson, secondJson)
+        }
+    }
+
+    private fun dispatchByType(key: String, acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
+        return when {
+            secondJson[key] is Map<*, *> && firstJson[key] is Map<*, *> ->
+                computeObjectDiff(acc, firstJson[key] as Map<String, Any>, secondJson[key] as Map<String, Any>)
+            secondJson[key] is List<*> && firstJson[key] is List<*> ->
+                computeListDiff(acc, firstJson[key] as List<Any>, secondJson[key] as List<Any>)
+            else -> computeValueDifference(key, acc, firstJson, secondJson)
+        }
+    }
+
+    private fun computeListDiff(acc: List<DiffResult>, firstList: List<Any>, secondList: List<Any>): List<DiffResult> {
+        return firstList.mapIndexed { index, any -> any to secondList.getOrNull(index) }.fold(acc) { acc, (first, second) ->
+            computeObjectDiff(acc, first as Map<String, Any>, second as Map<String, Any>)
         }
     }
 
