@@ -334,11 +334,11 @@ class DifferTest {
                 }
     }
 
-    private fun dispatchByType(jsonPath: String, firstItem: Any?, secondItem: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: Map<String, ListCombiner>): List<DiffResult> {
+    private fun dispatchByType(jsonPath: String, firstItem: Any?, secondItem: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, listCombinerMapping: Map<String, ListCombiner>): List<DiffResult> {
         return when {
             typesNotNullButDifferent(firstItem, secondItem) -> listOf(DiffResult.TypesMismatch(jsonPath, firstJson, secondJson))
-            bothAreMaps(firstItem, secondItem) -> computeObjectDiff(firstItem!!.asMap(), secondItem!!.asMap(), combinedListCreator, jsonPath)
-            bothAreLists(firstItem, secondItem) -> computeListDiff("$jsonPath[]", firstItem!!.asList(), secondItem!!.asList(), firstJson, secondJson, combinedListCreator)
+            bothAreMaps(firstItem, secondItem) -> computeObjectDiff(firstItem!!.asMap(), secondItem!!.asMap(), listCombinerMapping, jsonPath)
+            bothAreLists(firstItem, secondItem) -> computeListDiff("$jsonPath[]", firstItem!!.asList(), secondItem!!.asList(), firstJson, secondJson, listCombinerMapping)
             else -> computeValueDifference(jsonPath, firstItem, secondItem, firstJson, secondJson)
         }
     }
