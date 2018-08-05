@@ -18,7 +18,7 @@ class DifferTest {
         val second = """{
          "id": 1
         }""".trimIndent()
-        Assert.assertEquals(emptyList<DiffResult.ValueDifference>(), compare(first, second))
+        Assert.assertEquals(emptyList<DiffResult>(), compare(first, second))
     }
 
     @Test
@@ -30,7 +30,7 @@ class DifferTest {
         val second = """{
          "id": 2
         }""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".id",
                 firstValue = 1.0,
                 secondValue = 2.0,
@@ -47,7 +47,7 @@ class DifferTest {
 
         val second = """{
         }""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".id",
                 firstValue = 1.0,
                 secondValue = null,
@@ -64,7 +64,7 @@ class DifferTest {
         val second = """{
          "id": 1
         }""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".id",
                 firstValue = null,
                 secondValue = 1.0,
@@ -86,7 +86,7 @@ class DifferTest {
             "key": "2"
          }
         }""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".id.key",
                 firstValue = "1",
                 secondValue = "2",
@@ -109,7 +109,7 @@ class DifferTest {
          "id": 2
          }
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".items[].id",
                 firstValue = 1.0,
                 secondValue = 2.0,
@@ -131,7 +131,7 @@ class DifferTest {
          "id": 2
          }
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".items",
                 firstValue = "object",
                 secondValue = "list",
@@ -149,7 +149,7 @@ class DifferTest {
         }""".trimIndent()
 
         val second = """{ "items": 1 }""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".items",
                 firstValue = "object",
                 secondValue = "primitive",
@@ -167,7 +167,7 @@ class DifferTest {
         val second = """{ "items":[
          1,2,4
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".items[]",
                 firstValue = 3.0,
                 secondValue = 4.0,
@@ -185,7 +185,7 @@ class DifferTest {
         val second = """{ "items":[
          1,2
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".items[]",
                 firstValue = 3.0,
                 secondValue = null,
@@ -203,7 +203,7 @@ class DifferTest {
         val second = """{ "items":[
          1,2,3
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".items[]",
                 firstValue = null,
                 secondValue = 3.0,
@@ -221,7 +221,7 @@ class DifferTest {
         val second = """{ "items":[
          [1,2,3]
         ]}""".trimIndent()
-        Assert.assertEquals(DiffResult.ValueDifference(
+        Assert.assertEquals(DiffResult(
                 key = ".items[][]",
                 firstValue = null,
                 secondValue = 3.0,
@@ -253,13 +253,13 @@ class DifferTest {
          "labels": ["3l1", "3l3"]
          }]
         }""".trimIndent()
-        Assert.assertEquals(setOf(DiffResult.ValueDifference(
+        Assert.assertEquals(setOf(DiffResult(
                 key = ".items[].id",
                 firstValue = 2.0,
                 secondValue = 1.0,
                 firstObject = mapOf("id" to 2.0, "labels" to REMOVED_STRING),
                 secondObject = mapOf("id" to 1.0, "labels" to REMOVED_STRING)
-        ), DiffResult.ValueDifference(
+        ), DiffResult(
                 key = ".items[].labels[]",
                 firstValue = "3l2",
                 secondValue = "3l3",
@@ -318,8 +318,8 @@ class DifferTest {
         }""".trimIndent()
         val propertyBasedListCombiner = createPropertyBasedListCombiner("id")
         Assert.assertEquals(listOf(
-                DiffResult.ValueDifference(".items[].sub[].id", 1.0, 2.0, mapOf("id" to 1.0), mapOf("id" to 2.0)),
-                DiffResult.ValueDifference(".items[].sub[].id", 2.0, 1.0, mapOf("id" to 2.0), mapOf("id" to 1.0))),
+                DiffResult(".items[].sub[].id", 1.0, 2.0, mapOf("id" to 1.0), mapOf("id" to 2.0)),
+                DiffResult(".items[].sub[].id", 2.0, 1.0, mapOf("id" to 2.0), mapOf("id" to 1.0))),
                 compare(firstJson, secondJson, mapOf(".items[]" to propertyBasedListCombiner).withDefault { orderBasedListCombiner }))
     }
 
@@ -342,7 +342,7 @@ class DifferTest {
         val propertyBasedListCombiner = createPropertyBasedListCombiner("id")
         val listCombinerMapping = mapOf(".items[]" to propertyBasedListCombiner).withDefault { orderBasedListCombiner }
         Assert.assertEquals(listOf(
-                DiffResult.ValueDifference(
+                DiffResult(
                         key = ".items[]",
                         firstValue = null,
                         secondValue = mapOf("id" to 2.0),
@@ -396,7 +396,7 @@ class DifferTest {
     }
 
     private fun computeTypesDifference(jsonPath: String, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, firstItem: Any?, secondItem: Any?): List<DiffResult> =
-            listOf(DiffResult.ValueDifference(jsonPath, firstValue = determineType(firstItem), secondValue = determineType(secondItem), firstObject = firstJson, secondObject = secondJson))
+            listOf(DiffResult(jsonPath, firstValue = determineType(firstItem), secondValue = determineType(secondItem), firstObject = firstJson, secondObject = secondJson))
 
     private fun determineType(secondItem: Any?): String {
         if (secondItem == null) {
@@ -422,7 +422,7 @@ class DifferTest {
 
     private fun computeValueDifference(key: String, firstValue: Any?, secondValue: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>): List<DiffResult> {
         return if (secondValue != firstValue) {
-            listOf(DiffResult.ValueDifference(key = key,
+            listOf(DiffResult(key = key,
                     firstValue = firstValue,
                     secondValue = secondValue,
                     firstObject = removeLists(firstJson),
@@ -430,16 +430,13 @@ class DifferTest {
         } else emptyList()
     }
 
-    sealed class DiffResult {
-        data class ValueDifference(
-                val key: String,
-                val firstValue: Any?,
-                val secondValue: Any?,
-                val firstObject: Map<String, Any?>,
-                val secondObject: Map<String, Any?>
-        ) : DiffResult()
-    }
-
+    data class DiffResult(
+            val key: String,
+            val firstValue: Any?,
+            val secondValue: Any?,
+            val firstObject: Map<String, Any?>,
+            val secondObject: Map<String, Any?>
+    )
 }
 
 typealias ListCombiner = (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>
