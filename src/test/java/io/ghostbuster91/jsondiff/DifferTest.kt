@@ -209,6 +209,46 @@ class DifferTest {
         ), compare(first, second).first())
     }
 
+    @Test
+    fun complexTest() {
+        val first = """{ "items":
+        [{
+         "id": 2,
+         "labels": ["2l1"]
+         },
+         {
+         "id": 3,
+         "labels": ["3l1", "3l2"]
+         }]
+        }""".trimIndent()
+
+        val second = """{ "items":
+        [{
+         "id": 1,
+         "labels": ["2l1"]
+         },
+         {
+         "id": 3,
+         "labels": ["3l1", "3l3"]
+         }]
+        }""".trimIndent()
+        Assert.assertEquals(setOf(DiffResult.ValueDifference(
+                key = "id",
+                firstValue = 2.0,
+                secondValue = 1.0,
+                firstObject = mapOf("id" to 2.0, "labels" to listOf("2l1")),
+                secondObject = mapOf("id" to 1.0, "labels" to listOf("2l1"))
+        ), DiffResult.ValueDifference(
+                key = "labels",
+                firstValue = "3l2",
+                secondValue = "3l3",
+                firstObject = mapOf("id" to 3.0, "labels" to listOf("3l1", "3l2")),
+                secondObject = mapOf("id" to 3.0, "labels" to listOf("3l1", "3l3"))
+        )
+        ), compare(first, second).toSet())
+    }
+
+
     fun compare(first: String, second: String): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
