@@ -268,7 +268,38 @@ class DifferTest {
          }]
         }""".trimIndent()
         val propertyBasedListCombiner = createPropertyBasedListCombiner("id")
-        Assert.assertEquals(emptyList<DiffResult>(), compare(firstJson, secondJson, propertyBasedListCombiner))
+        val listCombinerMapping = mapOf(".items[]" to propertyBasedListCombiner).withDefault { orderBasedListCombiner }
+        Assert.assertEquals(emptyList<DiffResult>(), compare(firstJson, secondJson, listCombinerMapping))
+    }
+
+    @Test
+    fun propertyBasedListCombinerShouldBeAppliedOnlyToParticularLevel() {
+        val firstJson = """{ "items":
+        [{
+         "id": 2,
+         "sub":[{
+            "id":1
+            },{
+            "id":2
+            }]
+         }]
+        }""".trimIndent()
+
+        val secondJson = """{ "items":
+        [{
+         "id": 2,
+         "sub":[{
+            "id":2
+            },{
+            "id":1
+            }]
+         }]
+        }""".trimIndent()
+        val propertyBasedListCombiner = createPropertyBasedListCombiner("id")
+        Assert.assertEquals(listOf(
+                DiffResult.ValueDifference(".items[].sub[].id", 1.0, 2.0, mapOf("id" to 1.0), mapOf("id" to 2.0)),
+                DiffResult.ValueDifference(".items[].sub[].id", 2.0, 1.0, mapOf("id" to 2.0), mapOf("id" to 1.0))),
+                compare(firstJson, secondJson, mapOf(".items[]" to propertyBasedListCombiner).withDefault { orderBasedListCombiner }))
     }
 
     private fun createPropertyBasedListCombiner(property: String): (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>> {
@@ -277,29 +308,33 @@ class DifferTest {
         }
     }
 
-    fun compare(first: String, second: String, listCombiner: ListCombiner = orderBasedListCombiner): List<DiffResult> {
+    fun compare(
+            first: String,
+            second: String,
+            listCombinerMapping: Map<String, ListCombiner> = mapOf<String, ListCombiner>().withDefault { orderBasedListCombiner }
+    ): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
         val adapter = moshi.adapter<Map<String, Any>>(type)
         val firstJson = adapter.fromJson(first)!!
         val secondJson = adapter.fromJson(second)!!
-        return computeObjectDiff(firstJson, secondJson, listCombiner, "")
+        return computeObjectDiff(firstJson, secondJson, listCombinerMapping, "")
     }
 
-    private fun computeObjectDiff(firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>, parentKey: String): List<DiffResult> {
+    private fun computeObjectDiff(firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, listCombinerMapping: Map<String, ListCombiner>, parentKey: String): List<DiffResult> {
         return (firstJson.keys + secondJson.keys).distinct().fold(emptyList()) { acc, key ->
-            acc + dispatchByType("$parentKey.$key", firstJson[key], secondJson[key], firstJson, secondJson, combinedListCreator)
+            acc + dispatchByType("$parentKey.$key", firstJson[key], secondJson[key], firstJson, secondJson, listCombinerMapping)
         }
     }
 
-    private fun computeListDiff(jsonPath: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
-        return combinedListCreator(firstList, secondList)
+    private fun computeListDiff(jsonPath: String, firstList: List<Any?>, secondList: List<Any?>, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: Map<String, ListCombiner>): List<DiffResult> {
+        return combinedListCreator.getValue(jsonPath)(firstList, secondList)
                 .fold(emptyList()) { acc, (firstItem, secondItem) ->
                     acc + dispatchByType(jsonPath, firstItem, secondItem, firstJson, secondJson, combinedListCreator)
                 }
     }
 
-    private fun dispatchByType(jsonPath: String, firstItem: Any?, secondItem: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>): List<DiffResult> {
+    private fun dispatchByType(jsonPath: String, firstItem: Any?, secondItem: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: Map<String, ListCombiner>): List<DiffResult> {
         return when {
             typesNotNullButDifferent(firstItem, secondItem) -> listOf(DiffResult.TypesMismatch(jsonPath, firstJson, secondJson))
             bothAreMaps(firstItem, secondItem) -> computeObjectDiff(firstItem!!.asMap(), secondItem!!.asMap(), combinedListCreator, jsonPath)
