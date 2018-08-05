@@ -38,6 +38,24 @@ class DifferTest {
         ), compare(first, second).first())
     }
 
+    @Test
+    fun shouldDetectMissingKey() {
+        val first = """{
+         "id": 1
+        }""".trimIndent()
+
+        val second = """{
+        }""".trimIndent()
+        Assert.assertEquals(DiffResult(
+                key = "id",
+                firstValue = 1.0,
+                secondValue = null,
+                firstObject = mapOf("id" to 1.0),
+                secondObject = mapOf()
+        ), compare(first, second).first())
+    }
+
+
     fun compare(first: String, second: String): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
