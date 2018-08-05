@@ -271,9 +271,9 @@ class DifferTest {
         Assert.assertEquals(emptyList<DiffResult>(), compare(firstJson, secondJson, propertyBasedListCombiner))
     }
 
-    private fun createPropertyBasedListCombiner(propertyy: String): (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>> {
+    private fun createPropertyBasedListCombiner(property: String): (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>> {
         return { firstList, secondList ->
-            firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get(propertyy) == second?.asMap()?.get(propertyy) } }
+            firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get(property) == second?.asMap()?.get(property) } }
         }
     }
 
