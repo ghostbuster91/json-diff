@@ -7,6 +7,7 @@ import org.junit.Assert
 import org.junit.Test
 
 class DifferTest {
+    private val REMOVED_STRING = "**Removed**"
 
     @Test
     fun shouldReturnTrueForTwoIdenticalJsons() {
@@ -150,8 +151,8 @@ class DifferTest {
                 key = ".items[]",
                 firstValue = 3.0,
                 secondValue = 4.0,
-                firstObject = mapOf("items" to listOf(1.0, 2.0, 3.0)),
-                secondObject = mapOf("items" to listOf(1.0, 2.0, 4.0))
+                firstObject = mapOf("items" to REMOVED_STRING),
+                secondObject = mapOf("items" to REMOVED_STRING)
         ), compare(first, second).first())
     }
 
@@ -168,8 +169,8 @@ class DifferTest {
                 key = ".items[]",
                 firstValue = 3.0,
                 secondValue = null,
-                firstObject = mapOf("items" to listOf(1.0, 2.0, 3.0)),
-                secondObject = mapOf("items" to listOf(1.0, 2.0))
+                firstObject = mapOf("items" to REMOVED_STRING),
+                secondObject = mapOf("items" to REMOVED_STRING)
         ), compare(first, second).first())
     }
 
@@ -186,8 +187,8 @@ class DifferTest {
                 key = ".items[]",
                 firstValue = null,
                 secondValue = 3.0,
-                firstObject = mapOf("items" to listOf(1.0, 2.0)),
-                secondObject = mapOf("items" to listOf(1.0, 2.0, 3.0))
+                firstObject = mapOf("items" to REMOVED_STRING),
+                secondObject = mapOf("items" to REMOVED_STRING)
         ), compare(first, second).first())
     }
 
@@ -204,8 +205,8 @@ class DifferTest {
                 key = ".items[][]",
                 firstValue = null,
                 secondValue = 3.0,
-                firstObject = mapOf("items" to listOf(listOf(1.0, 2.0))),
-                secondObject = mapOf("items" to listOf(listOf(1.0, 2.0, 3.0)))
+                firstObject = mapOf("items" to REMOVED_STRING),
+                secondObject = mapOf("items" to REMOVED_STRING)
         ), compare(first, second).first())
     }
 
@@ -236,14 +237,14 @@ class DifferTest {
                 key = ".items[].id",
                 firstValue = 2.0,
                 secondValue = 1.0,
-                firstObject = mapOf("id" to 2.0, "labels" to listOf("2l1")),
-                secondObject = mapOf("id" to 1.0, "labels" to listOf("2l1"))
+                firstObject = mapOf("id" to 2.0, "labels" to REMOVED_STRING),
+                secondObject = mapOf("id" to 1.0, "labels" to REMOVED_STRING)
         ), DiffResult.ValueDifference(
                 key = ".items[].labels[]",
                 firstValue = "3l2",
                 secondValue = "3l3",
-                firstObject = mapOf("id" to 3.0, "labels" to listOf("3l1", "3l2")),
-                secondObject = mapOf("id" to 3.0, "labels" to listOf("3l1", "3l3"))
+                firstObject = mapOf("id" to 3.0, "labels" to REMOVED_STRING),
+                secondObject = mapOf("id" to 3.0, "labels" to REMOVED_STRING)
         )
         ), compare(first, second).toSet())
     }
@@ -302,9 +303,40 @@ class DifferTest {
                 compare(firstJson, secondJson, mapOf(".items[]" to propertyBasedListCombiner).withDefault { orderBasedListCombiner }))
     }
 
+    @Test
+    fun shouldMatchItemsWithinListByPropertyAndHandleMisses() {
+        val firstJson = """{ "items":
+        [{
+         "id": 3
+         }]
+        }""".trimIndent()
+
+        val secondJson = """{ "items":
+        [{
+         "id": 3
+         },
+         {
+         "id": 2
+         }]
+        }""".trimIndent()
+        val propertyBasedListCombiner = createPropertyBasedListCombiner("id")
+        val listCombinerMapping = mapOf(".items[]" to propertyBasedListCombiner).withDefault { orderBasedListCombiner }
+        Assert.assertEquals(listOf(
+                DiffResult.ValueDifference(
+                        key = ".items[]",
+                        firstValue = null,
+                        secondValue = mapOf("id" to 2.0),
+                        firstObject = mapOf("items" to REMOVED_STRING),
+                        secondObject = mapOf("items" to REMOVED_STRING)
+                )),
+                compare(firstJson, secondJson, listCombinerMapping))
+    }
+
     private fun createPropertyBasedListCombiner(property: String): (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>> {
         return { firstList, secondList ->
-            firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get(property) == second?.asMap()?.get(property) } }
+            (firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get(property) == second?.asMap()?.get(property) } } +
+                    secondList.map { second -> firstList.find { first -> first?.asMap()?.get(property) == second?.asMap()?.get(property) } to second })
+                    .distinctBy { it.first?.asMap()?.get(property) ?: it.second?.asMap()?.get(property) }
         }
     }
 
@@ -359,8 +391,8 @@ class DifferTest {
             listOf(DiffResult.ValueDifference(key = key,
                     firstValue = firstValue,
                     secondValue = secondValue,
-                    firstObject = firstJson,
-                    secondObject = secondJson))
+                    firstObject = removeLists(firstJson),
+                    secondObject = removeLists(secondJson)))
         } else emptyList()
     }
 
@@ -387,3 +419,16 @@ typealias ListCombiner = (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>
 private fun Any.asMap() = this as Map<String, Any?>
 
 private fun Any.asList() = this as List<Any?>
+
+fun removeLists(item: Map<String, Any?>): Map<String, Any?> {
+    return mutableMapOf<String, Any?>().apply {
+        val map = item.entries.map {
+            when {
+                it.value is Map<*, *> -> it.key to removeLists(it.value as Map<String, Any>)
+                it.value is List<*> -> it.key to "**Removed**"
+                else -> it.toPair()
+            }
+        }
+        putAll(map)
+    }
+}
