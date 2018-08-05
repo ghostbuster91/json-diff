@@ -55,6 +55,27 @@ class DifferTest {
         ), compare(first, second).first())
     }
 
+    @Test
+    fun shouldDetectDifferenceRecursively() {
+        val first = """{
+         "id": {
+            "key": "1"
+         }
+        }""".trimIndent()
+
+        val second = """{
+         "id": {
+            "key": "2"
+         }
+        }""".trimIndent()
+        Assert.assertEquals(DiffResult(
+                key = "key",
+                firstValue = "1",
+                secondValue = "2",
+                firstObject = mapOf("key" to "1"),
+                secondObject = mapOf("key" to "2")
+        ), compare(first, second).first())
+    }
 
     fun compare(first: String, second: String): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -62,14 +83,29 @@ class DifferTest {
         val adapter = moshi.adapter<Map<String, Any>>(type)
         val firstJson = adapter.fromJson(first)!!
         val secondJson = adapter.fromJson(second)!!
-        return firstJson.entries.fold(emptyList()) { acc, entry ->
-            if (secondJson[entry.key] != entry.value) acc + DiffResult(key = entry.key,
-                    firstValue = entry.value,
-                    secondValue = secondJson[entry.key],
+        return computeObjectDiff(emptyList(), firstJson, secondJson)
+    }
+
+    private fun computeObjectDiff(acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
+        return firstJson.keys.fold(acc) { acc, key ->
+            when {
+                secondJson[key] is Map<*, *> && firstJson[key] is Map<*, *> -> computeObjectDiff(
+                        acc,
+                        firstJson[key] as Map<String, Any>,
+                        secondJson[key] as Map<String, Any>)
+                else -> computeValueDifference(key, acc, firstJson, secondJson)
+            }
+        }
+    }
+
+    private fun computeValueDifference(key: String, acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
+        return if (secondJson[key] != firstJson[key]) {
+            acc + DiffResult(key = key,
+                    firstValue = firstJson[key],
+                    secondValue = secondJson[key],
                     firstObject = firstJson,
                     secondObject = secondJson)
-            else acc
-        }
+        } else acc
     }
 
     data class DiffResult(
