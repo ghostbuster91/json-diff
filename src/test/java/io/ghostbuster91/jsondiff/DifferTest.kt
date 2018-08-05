@@ -267,18 +267,23 @@ class DifferTest {
          "id": 2
          }]
         }""".trimIndent()
-        Assert.assertEquals(emptyList<DiffResult>(), compare(firstJson, secondJson) { firstList, secondList ->
-            firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get("id") == second?.asMap()?.get("id") } }
-        })
+        val propertyBasedListCombiner = createPropertyBasedListCombiner("id")
+        Assert.assertEquals(emptyList<DiffResult>(), compare(firstJson, secondJson, propertyBasedListCombiner))
     }
 
-    fun compare(first: String, second: String, combinedListCreator: CombinedListCreator = ::combineListsByOrder): List<DiffResult> {
+    private fun createPropertyBasedListCombiner(propertyy: String): (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>> {
+        return { firstList, secondList ->
+            firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get(propertyy) == second?.asMap()?.get(propertyy) } }
+        }
+    }
+
+    fun compare(first: String, second: String, listCombiner: ListCombiner = orderBasedListCombiner): List<DiffResult> {
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
         val adapter = moshi.adapter<Map<String, Any>>(type)
         val firstJson = adapter.fromJson(first)!!
         val secondJson = adapter.fromJson(second)!!
-        return computeObjectDiff(firstJson, secondJson, combinedListCreator, "")
+        return computeObjectDiff(firstJson, secondJson, listCombiner, "")
     }
 
     private fun computeObjectDiff(firstJson: Map<String, Any?>, secondJson: Map<String, Any?>, combinedListCreator: (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>, parentKey: String): List<DiffResult> {
@@ -310,8 +315,9 @@ class DifferTest {
 
     private fun bothAreMaps(firstObject: Any?, secondObject: Any?) = secondObject is Map<*, *> && firstObject is Map<*, *>
 
-    private fun combineListsByOrder(firstList: List<Any?>, secondList: List<Any?>) =
-            (0..Math.max(firstList.size, secondList.size)).map { firstList.getOrNull(it) to secondList.getOrNull(it) }
+    private val orderBasedListCombiner: ListCombiner = { firstList: List<Any?>, secondList: List<Any?> ->
+        (0..Math.max(firstList.size, secondList.size)).map { firstList.getOrNull(it) to secondList.getOrNull(it) }
+    }
 
     private fun computeValueDifference(key: String, firstValue: Any?, secondValue: Any?, firstJson: Map<String, Any?>, secondJson: Map<String, Any?>): List<DiffResult> {
         return if (secondValue != firstValue) {
@@ -341,7 +347,7 @@ class DifferTest {
 
 }
 
-typealias CombinedListCreator = (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>
+typealias ListCombiner = (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>
 
 private fun Any.asMap() = this as Map<String, Any?>
 
