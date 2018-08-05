@@ -56,6 +56,23 @@ class DifferTest {
     }
 
     @Test
+    fun shouldDetectMissingKeyInFirst() {
+        val first = """{
+        }""".trimIndent()
+
+        val second = """{
+         "id": 1
+        }""".trimIndent()
+        Assert.assertEquals(DiffResult.ValueDifference(
+                key = "id",
+                firstValue = null,
+                secondValue = 1.0,
+                firstObject = mapOf(),
+                secondObject = mapOf("id" to 1.0)
+        ), compare(first, second).first())
+    }
+
+    @Test
     fun shouldDetectDifferenceRecursively() {
         val first = """{
          "id": {
@@ -130,7 +147,7 @@ class DifferTest {
     }
 
     private fun computeObjectDiff(acc: List<DiffResult>, firstJson: Map<String, Any>, secondJson: Map<String, Any>): List<DiffResult> {
-        return firstJson.keys.fold(acc) { acc, key ->
+        return (firstJson.keys + secondJson.keys).distinct().fold(acc) { acc, key ->
             dispatchByType(key, acc, firstJson, secondJson)
         }
     }
