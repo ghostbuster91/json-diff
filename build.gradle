@@ -2,14 +2,20 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.2.51'
 }
 
+apply plugin: 'application'
+
 group 'io.ghostbuster91'
 version '0.1'
 
+mainClassName = 'io.ghostbuster91.jsondiff.LauncherKt'
+
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
+    compile 'com.github.ajalt:clikt:1.2.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile 'com.squareup.moshi:moshi-kotlin:1.6.0'
     testCompile "junit:junit:4.12"
