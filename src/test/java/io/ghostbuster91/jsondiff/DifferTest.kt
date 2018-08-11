@@ -168,8 +168,8 @@ class DifferTest {
                 key = ".items[]",
                 firstValue = 3.0,
                 secondValue = 4.0,
-                firstObject = mapOf("items" to REMOVED_STRING),
-                secondObject = mapOf("items" to REMOVED_STRING)
+                firstObject = mapOf("items" to listOf(1.0, 2.0, 3.0)),
+                secondObject = mapOf("items" to listOf(1.0, 2.0, 4.0))
         ), compare(first, second).first())
     }
 
@@ -186,8 +186,8 @@ class DifferTest {
                 key = ".items[]",
                 firstValue = 3.0,
                 secondValue = null,
-                firstObject = mapOf("items" to REMOVED_STRING),
-                secondObject = mapOf("items" to REMOVED_STRING)
+                firstObject = mapOf("items" to listOf(1.0, 2.0, 3.0)),
+                secondObject = mapOf("items" to listOf(1.0, 2.0))
         ), compare(first, second).first())
     }
 
@@ -204,8 +204,8 @@ class DifferTest {
                 key = ".items[]",
                 firstValue = null,
                 secondValue = 3.0,
-                firstObject = mapOf("items" to REMOVED_STRING),
-                secondObject = mapOf("items" to REMOVED_STRING)
+                firstObject = mapOf("items" to listOf(1.0, 2.0)),
+                secondObject = mapOf("items" to listOf(1.0, 2.0, 3.0))
         ), compare(first, second).first())
     }
 
@@ -222,8 +222,8 @@ class DifferTest {
                 key = ".items[][]",
                 firstValue = null,
                 secondValue = 3.0,
-                firstObject = mapOf("items" to REMOVED_STRING),
-                secondObject = mapOf("items" to REMOVED_STRING)
+                firstObject = mapOf("items" to listOf(listOf(1.0, 2.0))),
+                secondObject = mapOf("items" to listOf(listOf(1.0, 2.0, 3.0)))
         ), compare(first, second).first())
     }
 
@@ -254,14 +254,14 @@ class DifferTest {
                 key = ".items[].id",
                 firstValue = 2.0,
                 secondValue = 1.0,
-                firstObject = mapOf("id" to 2.0, "labels" to REMOVED_STRING),
-                secondObject = mapOf("id" to 1.0, "labels" to REMOVED_STRING)
+                firstObject = mapOf("id" to 2.0, "labels" to listOf("2l1")),
+                secondObject = mapOf("id" to 1.0, "labels" to listOf("2l1"))
         ), DiffResult(
                 key = ".items[].labels[]",
                 firstValue = "3l2",
                 secondValue = "3l3",
-                firstObject = mapOf("id" to 3.0, "labels" to REMOVED_STRING),
-                secondObject = mapOf("id" to 3.0, "labels" to REMOVED_STRING)
+                firstObject = mapOf("id" to 3.0, "labels" to listOf("3l1", "3l2")),
+                secondObject = mapOf("id" to 3.0, "labels" to listOf("3l1", "3l3"))
         )
         ), compare(first, second).toSet())
     }
@@ -343,8 +343,8 @@ class DifferTest {
                         key = ".items[]",
                         firstValue = null,
                         secondValue = mapOf("id" to 2.0),
-                        firstObject = mapOf("items" to REMOVED_STRING),
-                        secondObject = mapOf("items" to REMOVED_STRING)
+                        firstObject = mapOf("items" to listOf(mapOf("id" to 3.0))),
+                        secondObject = mapOf("items" to listOf(mapOf("id" to 3.0), mapOf("id" to 2.0)))
                 )),
                 compare(firstJson, secondJson, listCombinerMapping))
     }

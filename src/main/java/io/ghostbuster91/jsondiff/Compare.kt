@@ -7,8 +7,9 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 fun compare(
         first: String,
         second: String,
-        listCombinerMapping: Map<String, ListCombiner> = mapOf<String, ListCombiner>().withDefault { orderBasedListCombiner }
+        listCombinerMapping: Map<String, ListCombiner> = mapOf()
 ): List<DiffResult> {
+    val listCombinerMapping = listCombinerMapping.withDefault { orderBasedListCombiner }
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
     val adapter = moshi.adapter<Map<String, Any>>(type)
@@ -69,8 +70,8 @@ private fun computeValueDifference(key: String, firstValue: Any?, secondValue: A
         listOf(DiffResult(key = key,
                 firstValue = firstValue,
                 secondValue = secondValue,
-                firstObject = removeLists(firstJson),
-                secondObject = removeLists(secondJson)))
+                firstObject = firstJson,
+                secondObject = secondJson))
     } else emptyList()
 }
 
@@ -87,19 +88,6 @@ typealias ListCombiner = (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>>
 private fun Any.asMap() = this as Map<String, Any?>
 
 private fun Any.asList() = this as List<Any?>
-
-fun removeLists(item: Map<String, Any?>): Map<String, Any?> {
-    return mutableMapOf<String, Any?>().apply {
-        val map = item.entries.map {
-            when {
-                it.value is Map<*, *> -> it.key to removeLists(it.value as Map<String, Any>)
-                it.value is List<*> -> it.key to "**Removed**"
-                else -> it.toPair()
-            }
-        }
-        putAll(map)
-    }
-}
 
 fun createPropertyBasedListCombiner(property: String): (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>> {
     return { firstList, secondList ->

@@ -18,6 +18,7 @@ dependencies {
     compile 'com.github.ajalt:clikt:1.2.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile 'com.squareup.moshi:moshi-kotlin:1.6.0'
+    compile 'com.google.code.gson:gson:2.8.5'
     testCompile "junit:junit:4.12"
 }
 
