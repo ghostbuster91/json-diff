@@ -11,7 +11,7 @@ fun printResults(diffResults: List<DiffResult>, displayOptions: DisplayOptions) 
     }
 }
 
-fun printSingleResult(diffResult: DiffResult, printer: PrettyPrinter) {
+private fun printSingleResult(diffResult: DiffResult, printer: PrettyPrinter) {
     diffResult.let {
         println("Affected key: ${it.key}")
         println("First value: ${printer.apply(it.firstValue)}")
@@ -23,7 +23,11 @@ fun printSingleResult(diffResult: DiffResult, printer: PrettyPrinter) {
     }
 }
 
-class ValuePrinter(private val displayOptions: DisplayOptions) : Printer {
+private interface Printer {
+    fun apply(any: Any?): Any
+}
+
+private class ValuePrinter(private val displayOptions: DisplayOptions) : Printer {
     override fun apply(any: Any?): Any {
         return applyRec(any)
     }
@@ -45,11 +49,7 @@ class ValuePrinter(private val displayOptions: DisplayOptions) : Printer {
     }
 }
 
-interface Printer {
-    fun apply(any: Any?): Any
-}
-
-class PrettyPrinter(private val printer: Printer) : Printer {
+private class PrettyPrinter(private val printer: Printer) : Printer {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
     override fun apply(any: Any?): Any {
