@@ -55,7 +55,7 @@ private fun determineType(secondItem: Any?): String {
 }
 
 private fun typesNotNullButDifferent(firstObject: Any?, secondObject: Any?) =
-        secondObject != null && firstObject != null && secondObject.javaClass != firstObject.javaClass
+        secondObject != null && firstObject != null && determineType(firstObject) != determineType(secondObject)
 
 private fun bothAreLists(firstObject: Any?, secondObject: Any?) = secondObject is List<*> && firstObject is List<*>
 

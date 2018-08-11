@@ -348,5 +348,47 @@ class DifferTest {
                 )),
                 compare(firstJson, secondJson, listCombinerMapping))
     }
+
+    @Test
+    fun shouldCalculateMismatchWhenBothValuesAreDifferentPrimitives() {
+        val firstJson = """{
+          "created_at": 1533970194318,
+          "sequence": 3385
+        }
+        """.trimIndent()
+        val secondJson = """{
+          "created_at": "other",
+          "sequence": 3385
+        }
+        """.trimIndent()
+        Assert.assertEquals(listOf(DiffResult(
+                key = ".created_at",
+                firstValue = 1533970194318.0,
+                secondValue = "other",
+                firstObject = mapOf("created_at" to 1533970194318.0, "sequence" to 3385.0 ),
+                secondObject = mapOf("created_at" to "other", "sequence" to 3385.0 )
+        )), compare(firstJson, secondJson))
+    }
+
+    @Test
+    fun shouldDetectTypeMismatchEvenWhenValuesAreTheSame() {
+        val firstJson = """{
+          "created_at": 1533970194318,
+          "sequence": 3385
+        }
+        """.trimIndent()
+        val secondJson = """{
+          "created_at": "1533970194318",
+          "sequence": 3385
+        }
+        """.trimIndent()
+        Assert.assertEquals(listOf(DiffResult(
+                key = ".created_at",
+                firstValue = 1533970194318.0,
+                secondValue = "1533970194318",
+                firstObject = mapOf("created_at" to 1533970194318.0, "sequence" to 3385.0 ),
+                secondObject = mapOf("created_at" to "1533970194318", "sequence" to 3385.0 )
+        )), compare(firstJson, secondJson))
+    }
 }
 

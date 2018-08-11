@@ -1,6 +1,7 @@
 package io.ghostbuster91.jsondiff
 
 import com.google.gson.GsonBuilder
+import com.google.gson.LongSerializationPolicy
 
 fun printResults(diffResults: List<DiffResult>, displayOptions: DisplayOptions) {
     println("Found ${diffResults.size} differences\n")
@@ -24,19 +25,19 @@ private fun printSingleResult(diffResult: DiffResult, printer: PrettyPrinter) {
 }
 
 private interface Printer {
-    fun apply(any: Any?): Any
+    fun apply(any: Any?): Any?
 }
 
 private class ValuePrinter(private val displayOptions: DisplayOptions) : Printer {
-    override fun apply(any: Any?): Any {
+    override fun apply(any: Any?): Any? {
         return applyRec(any)
     }
 
-    private fun applyRec(any: Any?, depth: Int = 0): Any {
+    private fun applyRec(any: Any?, depth: Int = 0): Any? {
         return when (any) {
             is Map<*, *> -> applyToMap(any, depth)
             is List<*> -> printList(any)
-            else -> any.toString()
+            else -> any
         }
     }
 
@@ -50,9 +51,15 @@ private class ValuePrinter(private val displayOptions: DisplayOptions) : Printer
 }
 
 private class PrettyPrinter(private val printer: Printer) : Printer {
-    private val gson = GsonBuilder().setPrettyPrinting().create()
+    private val gson = GsonBuilder()
+            .setPrettyPrinting()
+            .create()
 
-    override fun apply(any: Any?): Any {
-        return gson.toJson(printer.apply(any))
+    override fun apply(any: Any?): Any? {
+        return if (any is Map<*, *>) {
+            gson.toJson(printer.apply(any))
+        } else {
+            any
+        }
     }
 }
