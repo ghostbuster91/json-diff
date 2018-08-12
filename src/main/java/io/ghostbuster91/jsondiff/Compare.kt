@@ -44,10 +44,8 @@ private fun computeTypesDifference(jsonPath: String, firstJson: Map<String, Any?
         listOf(DiffResult(jsonPath, firstValue = determineType(firstItem), secondValue = determineType(secondItem), firstObject = firstJson, secondObject = secondJson))
 
 private fun determineType(secondItem: Any?): String {
-    if (secondItem == null) {
-        return "null"
-    }
     return when (secondItem) {
+        null -> "null"
         is Map<*, *> -> "object"
         is List<*> -> "list"
         else -> "primitive"
