@@ -26,6 +26,8 @@ private val MATCH_LIST_HELP =
            Takes a pair of strings, where the first string represents unique path to the list calculated from the top of particular json
            and the second one refers to the key from items within that list. All not matched items will be treated as missing in the corresponding list.
 
+           To match against whole items rather then some specific key '.'  can be passed.
+
            Can be specified one or multiple times.
         """.trimIndent()
 

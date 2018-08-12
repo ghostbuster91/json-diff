@@ -4,6 +4,38 @@ Using [ktm](https://github.com/ghostbuster91/ktm)
 
 `$ ktm install com.github.ghostbuster91:json-diff --version 0.1`
 
+### Usage
+```
+Usage: jsondiff [OPTIONS] firstFile secondFile
+
+Options:
+  -m, --matching jsonPath itemKey...
+                                   Defines mapping between two particular lists
+  -l, --display-max-list-size INT  Max items in list to be displayed. Default 0
+  -d, --display-max-depth INT      Max depth of json to be displayed. Default
+                                   infinity
+  -h, --help                       Show this message and exit
+
+Detailed description
+
+Option '-m'
+
+Defines how elements from lists should be matched against each other.
+
+By default they are matched by their order within corresponding list, so the
+first element from the first list will be compared to the first element from
+the second list and so on.
+
+Takes a pair of strings, where the first string represents unique path to the
+list calculated from the top of particular json and the second one refers to
+the key from items within that list. All not matched items will be treated as
+missing in the corresponding list.
+
+To match against whole items rather then some specific key '.' can be passed.
+
+Can be specified one or multiple times.
+```
+
 ### Example:
 
 `$ json-diff sample/big_list.json sample/big_list_2.json -m ".items[]" "id"`
