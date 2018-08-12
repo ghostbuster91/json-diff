@@ -425,5 +425,30 @@ class DifferTest {
         """.trimIndent()
         Assert.assertEquals(1, compare(firstJson, secondJson, mapOf(".items[]" to createPropertyBasedListCombiner("."))).size)
     }
+
+    @Test
+    fun shouldSupportJsonPathAsKeyForListComparator() {
+        val firstJson = """{
+          "items": [
+            {"nested":{"id":1}},
+            {"nested":{"id":2}}
+          ]
+        }
+        """.trimIndent()
+        val secondJson = """{
+          "items": [
+            {"nested":{"id":2}},
+            {"nested":{"id":1, "other_key":"not_important"}}
+          ]
+        }
+        """.trimIndent()
+        Assert.assertEquals(listOf(DiffResult(
+                key = ".items[].nested.other_key",
+                firstValue = null,
+                secondValue = "not_important",
+                firstObject = mapOf("id" to 1.0),
+                secondObject = mapOf("id" to 1.0, "other_key" to "not_important")
+        )), compare(firstJson, secondJson, mapOf(".items[]" to createPropertyBasedListCombiner(".nested.id"))))
+    }
 }
 

@@ -96,10 +96,16 @@ fun createPropertyBasedListCombiner(property: String): (List<Any?>, List<Any?>) 
     }
 }
 
-fun createItemComparator(key: String): (Any?, Any?) -> Boolean {
-    if (key == ".") {
-        return { first, second -> first == second }
-    } else {
-        return { first, second -> first?.asMap()?.get(key) == second?.asMap()?.get(key) }
+private fun createItemComparator(jsonPath: String): (Any?, Any?) -> Boolean {
+    return { first, second -> findProperty(first, jsonPath) == findProperty(second, jsonPath) }
+}
+
+private fun findProperty(jsonObject: Any?, jsonPath: String): Any? {
+    val nextLevelPath = jsonPath.substringAfter(".")
+    val key = nextLevelPath.substringBefore(".")
+    return when {
+        key == "" -> jsonObject
+        nextLevelPath.contains(".") -> findProperty(jsonObject?.asMap()?.get(key), nextLevelPath)
+        else -> jsonObject?.asMap()?.get(key)
     }
 }
