@@ -388,5 +388,42 @@ class DifferTest {
                 secondObject = mapOf("created_at" to "1533970194318", "sequence" to 3385.0)
         )), compare(firstJson, secondJson))
     }
+
+    @Test
+    fun shouldReportOnlyNotMatchedItemsWhenMatchingIsProvidedForWholeItems_Primitives() {
+        val firstJson = """{
+          "items": [1,2,3,4,5]
+        }
+        """.trimIndent()
+        val secondJson = """{
+          "items": [1,3,4,5]
+        }
+        """.trimIndent()
+        Assert.assertEquals(1, compare(firstJson, secondJson, mapOf(".items[]" to createPropertyBasedListCombiner("."))).size)
+    }
+
+    @Test
+    fun shouldReportOnlyNotMatchedItemsWhenMatchingIsProvidedForWholeItems_Objects() {
+        val firstJson = """{
+          "items": [
+            {"id":1},
+            {"id":2},
+            {"id":3},
+            {"id":4},
+            {"id":5}
+          ]
+        }
+        """.trimIndent()
+        val secondJson = """{
+          "items": [
+            {"id":1},
+            {"id":3},
+            {"id":4},
+            {"id":5}
+          ]
+        }
+        """.trimIndent()
+        Assert.assertEquals(1, compare(firstJson, secondJson, mapOf(".items[]" to createPropertyBasedListCombiner("."))).size)
+    }
 }
 

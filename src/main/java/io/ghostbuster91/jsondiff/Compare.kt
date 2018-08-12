@@ -90,9 +90,18 @@ private fun Any.asMap() = this as Map<String, Any?>
 private fun Any.asList() = this as List<Any?>
 
 fun createPropertyBasedListCombiner(property: String): (List<Any?>, List<Any?>) -> List<Pair<Any?, Any?>> {
+    val itemComparator = createItemComparator(property)
     return { firstList, secondList ->
-        (firstList.map { first -> first to secondList.find { second -> first?.asMap()?.get(property) == second?.asMap()?.get(property) } } +
-                secondList.map { second -> firstList.find { first -> first?.asMap()?.get(property) == second?.asMap()?.get(property) } to second })
-                .distinctBy { it.first?.asMap()?.get(property) ?: it.second?.asMap()?.get(property) }
+        val firstWithSecond = firstList.map { first -> first to secondList.find { second -> itemComparator(first, second) } }
+        val notMatched = (secondList - firstWithSecond.map { it.second }).map { null to it }
+        firstWithSecond + notMatched
+    }
+}
+
+fun createItemComparator(key: String): (Any?, Any?) -> Boolean {
+    if (key == ".") {
+        return { first, second -> first == second }
+    } else {
+        return { first, second -> first?.asMap()?.get(key) == second?.asMap()?.get(key) }
     }
 }
