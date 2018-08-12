@@ -59,10 +59,9 @@ Where first belongs to
   "likes": [],
   "replies": [],
   "sequence": 3401.0,
-  "target": "最近辛いもの食べすぎてお腹下しそうにょ....",
   "type": "post_club"
 }
-And second belongs to 
+And second belongs to
 {
   "about": "ethereum:0x06012c8cf97bead5deae237070f9587f8e7a266d",
   "author": "0x0548e5edb8efa588339f8398aeb349804e5f693e",
@@ -73,7 +72,6 @@ And second belongs to
   "likes": [],
   "replies": [],
   "sequence": 3401.0,
-  "target": "最近辛いもの食べすぎてお腹下しそうにょ....",
   "type": "post_club"
 }
 ====================================================================================
@@ -83,7 +81,7 @@ Diff number 2:
 Affected key: .items[].replies[].family
 First value: http
 Second value: something something
-Where first belongs to 
+Where first belongs to
 {
   "author": "0xdb6047646ea3928b79d92844aa164d1106b69b27",
   "context": "ethereum:0x06012c8cf97bead5deae237070f9587f8e7a266d:839415",
@@ -91,10 +89,9 @@ Where first belongs to
   "family": "http",
   "id": "claim:0x62bc67cb81beaa089f83f80a039c938abd95e3619ae325073cd9a0d1b8e6d97645233035adab566868d7817d261499085cb4d076515ad738667ef2ae935d6ad61b",
   "likes": [],
-  "sequence": 3392.0,
-  "target": "飼い主によく似てるにゃ"
+  "sequence": 3392.0
 }
-And second belongs to 
+And second belongs to
 {
   "author": "0xdb6047646ea3928b79d92844aa164d1106b69b27",
   "context": "ethereum:0x06012c8cf97bead5deae237070f9587f8e7a266d:839415",
@@ -102,8 +99,7 @@ And second belongs to
   "family": "something something",
   "id": "claim:0x62bc67cb81beaa089f83f80a039c938abd95e3619ae325073cd9a0d1b8e6d97645233035adab566868d7817d261499085cb4d076515ad738667ef2ae935d6ad61b",
   "likes": [],
-  "sequence": 3392.0,
-  "target": "飼い主によく似てるにゃ"
+  "sequence": 3392.0
 }
 ====================================================================================
 
@@ -112,7 +108,7 @@ Diff number 3:
 Affected key: .items[].replies[].created_at
 First value: 1.533994530387E12
 Second value: other
-Where first belongs to 
+Where first belongs to
 {
   "author": "0xdb6047646ea3928b79d92844aa164d1106b69b27",
   "context": "ethereum:0x06012c8cf97bead5deae237070f9587f8e7a266d:839415",
@@ -120,10 +116,9 @@ Where first belongs to
   "family": "http",
   "id": "claim:0x9e1b32c86a33eb76061555c71de0018df30aa5aa4e95fa4775eb1b7ebe136a360c7d5eb7c0c6bdfb03d1c948d50d861ab334376d94eb9c534274b07caed450a01b",
   "likes": [],
-  "sequence": 3415.0,
-  "target": "かそーつーかってなに？"
+  "sequence": 3415.0
 }
-And second belongs to 
+And second belongs to
 {
   "author": "0xdb6047646ea3928b79d92844aa164d1106b69b27",
   "context": "ethereum:0x06012c8cf97bead5deae237070f9587f8e7a266d:839415",
@@ -131,8 +126,7 @@ And second belongs to
   "family": "http",
   "id": "claim:0x9e1b32c86a33eb76061555c71de0018df30aa5aa4e95fa4775eb1b7ebe136a360c7d5eb7c0c6bdfb03d1c948d50d861ab334376d94eb9c534274b07caed450a01b",
   "likes": [],
-  "sequence": 3415.0,
-  "target": "かそーつーかってなに？"
+  "sequence": 3415.0
 }
 ====================================================================================
 
@@ -148,15 +142,14 @@ First value: {
   "likes": [],
   "replies": [],
   "sequence": 3378.0,
-  "target": "ぼく、煽り皮肉ネコだけど\nなんかモンクある？\nん？",
   "type": "regular"
 }
 Second value: null
-Where first belongs to 
+Where first belongs to
 {
   "items": []
 }
-And second belongs to 
+And second belongs to
 {
   "items": []
 }
@@ -176,14 +169,13 @@ Second value: {
   "likes": [],
   "replies": [],
   "sequence": 3374.0,
-  "target": "おはにょ、先日のにゃんこミートアップ行きたかったにょ...",
   "type": "post_club"
 }
-Where first belongs to 
+Where first belongs to
 {
   "items": []
 }
-And second belongs to 
+And second belongs to
 {
   "items": []
 }
@@ -202,7 +194,6 @@ Second value: {
   "likes": [],
   "replies": [],
   "sequence": 3370.0,
-  "target": "みゃおー！\n今日からお盆にゃ\nみんにゃはどうやって過ごすのにゃ？",
   "type": "regular"
 }
 Where first belongs to 
