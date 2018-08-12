@@ -4,8 +4,6 @@ import org.junit.Assert
 import org.junit.Test
 
 class DifferTest {
-    private val REMOVED_STRING = "**Removed**"
-
     @Test
     fun shouldReturnTrueForTwoIdenticalJsons() {
         val first = """{
@@ -365,8 +363,8 @@ class DifferTest {
                 key = ".created_at",
                 firstValue = 1533970194318.0,
                 secondValue = "other",
-                firstObject = mapOf("created_at" to 1533970194318.0, "sequence" to 3385.0 ),
-                secondObject = mapOf("created_at" to "other", "sequence" to 3385.0 )
+                firstObject = mapOf("created_at" to 1533970194318.0, "sequence" to 3385.0),
+                secondObject = mapOf("created_at" to "other", "sequence" to 3385.0)
         )), compare(firstJson, secondJson))
     }
 
@@ -386,8 +384,8 @@ class DifferTest {
                 key = ".created_at",
                 firstValue = 1533970194318.0,
                 secondValue = "1533970194318",
-                firstObject = mapOf("created_at" to 1533970194318.0, "sequence" to 3385.0 ),
-                secondObject = mapOf("created_at" to "1533970194318", "sequence" to 3385.0 )
+                firstObject = mapOf("created_at" to 1533970194318.0, "sequence" to 3385.0),
+                secondObject = mapOf("created_at" to "1533970194318", "sequence" to 3385.0)
         )), compare(firstJson, secondJson))
     }
 }
