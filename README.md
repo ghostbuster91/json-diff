@@ -2,7 +2,7 @@
 ## Installation 
 Using [ktm](https://github.com/ghostbuster91/ktm)
 
-`$ ktm install com.github.ghostbuster91:json-diff --version 0.1`
+`$ ktm install com.github.ghostbuster91:json-diff --version 0.2`
 
 ### Usage
 ```
